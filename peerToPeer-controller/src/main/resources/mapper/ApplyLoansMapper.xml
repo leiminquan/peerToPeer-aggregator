@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.ApplyLoansDao">
+	<resultMap type="com.lxit.p2p.bean.Applyloans" id="ApplyLoansMap">
+		<id column="id" property="applyLoansId" />
+		<result column="type" property="type" />
+		<result column="money" property="money" />
+		<result column="deadline" property="deadline" />
+		<result column="rate" property="rate" />
+		<result column="purpose" property="purpose" />
+		<result column="describe" property="describe" />
+		<result column="way" property="way" />
+		<result column="state" property="state" />
+		<result column="time" property="time" />
+		<result column="creationor" property="creationor" />
+		<result column="creationTime" property="creationTime" />
+		<result column="state" property="state" />
+		<result column="modifier" property="modifier" />
+		<result column="modificationTime" property="modificationTime" />
+		<result column="postscript" property="postscript" />
+		<result column="startTime" property="startTime" />
+		<result column="offtime" property="offtime" />
+		<result column="fullTime" property="fullTime" />
+		<result column="loanTime" property="loanTime" />
+		<result column="creationorName" property="creationorName" />
+		<result column="modifierName" property="modifierName" />
+		<result column="userNickName" property="userNickName" />
+		<collection property="user" column="userId" ofType="com.lxit.p2p.bean.User">
+			<id column="id" property="userId" />
+			<result column="nickName" property="nickName" />
+			<result column="phone" property="phone" />
+		</collection>
+	</resultMap>
+
+	<insert id="insertDay" parameterType="java.util.Map">
+		insert into
+		applyloans(creationTime)
+		value(DATE_ADD(now(),INTERVAL #{count} DAY));
+	</insert>
+
+	<select id="selectApplyLoansAll" resultMap="ApplyLoansMap"
+		parameterType="java.util.Map">
+		select
+		a.id,(select u.nickName from `user` u where u.id=a.userId ) as
+		userNickName,
+		a.type,a.money,a.deadline,a.rate,a.`describe`,a.way,a.startTime,a.fullTime,a.loanTime,
+		(select u.nickName from `user` u where u.id=a.creater) AS
+		creationorName,a.creationTime
+		from applyloans a where a.state =
+		#{state}
+		<if
+			test="applyLoansBegin != '' and applyLoansBegin != null or applyLoansEnd != '' and applyLoansEnd != null">
+			<choose>
+				<when
+					test="applyLoansBegin != '' and applyLoansBegin != null and applyLoansEnd != '' and applyLoansEnd != null">
+					and DATE(a.creationTime) between #{applyLoansBegin} and
+					#{applyLoansEnd}
+				</when>
+				<when test="applyLoansBegin != '' and applyLoansBegin != null">
+					and DATE(a.creationTime) &gt; #{applyLoansBegin}
+				</when>
+				<when test="applyLoansEnd != '' and applyLoansEnd != null">
+					and DATE(a.creationTime) &lt; #{applyLoansEnd}
+				</when>
+				<otherwise>
+					and 1=1
+				</otherwise>
+			</choose>
+		</if>
+		<if test="applyLoansType != null and applyLoansType !=''">
+			and a.type = #{applyLoansType}
+		</if>
+		order by creationTime ASC
+		<if test="initiate != null and initiate != '' or initiate == 0">
+			limit #{initiate},#{pageSize}
+		</if>
+	</select>
+
+	<!-- 贷款详细查询 -->
+	<select id="selectApplyLoansOne" resultMap="ApplyLoansMap"
+		parameterType="int">
+		select
+		a.id,(select u.nickName from `user` u where
+		u.id=a.userId ) as userNickName,
+		a.type,a.money,a.deadline,a.rate,a.`describe`,a.way,
+		a.creationTime,a.offtime,a.purpose,a.startTime,a.fullTime,a.loanTime,
+		(select
+		s.sta_name from staffs s where
+		s.sta_no=a.modifier) AS
+		modifierName,a.modificationTime
+		from applyloans
+		a
+		where id = #{id}
+	</select>
+
+	<!-- 贷款申请审核 -->
+	<update id="updateApplyLoans" parameterType="com.lxit.p2p.bean.Applyloans">
+		update applyloans
+		set state =#{state},modifier =
+		#{modifier},modificationTime=now()
+
+		<if test="state == '招标中'">
+			,startTime=now(),offtime=DATE_ADD(NOW(),INTERVAL 30 DAY)
+		</if>
+		<if test="state == '待偿还'">
+			,loanTime=now()
+		</if>
+		where id = #{applyLoansId}
+	</update>
+	<!-- 已流标查询 -->
+	<select id="selectOfftimeApplyloansAll" resultMap="ApplyLoansMap" parameterType="java.util.Map">
+		select a.id,(select u.nickName from `user` u where
+		u.id=a.userId ) as userNickName,
+		a.type,a.money,a.deadline,a.rate,a.`describe`,a.way,
+		a.startTime,a.offtime,
+		(select s.sta_name from staffs s where
+		s.sta_no=a.modifier) AS
+		modifierName,a.modificationTime FROM applyloans
+		a WHERE DATEDIFF(NOW(),a.offtime) >=1 and a.state = '招标中'
+		<if test="refundplanType != null and refundplanType !=''">
+			and a.type = #{refundplanType}
+		</if>
+		order by offtime ASC
+		<if test="initiate != null and initiate != '' or initiate == 0">
+			limit #{initiate},#{pageSize}
+		</if>
+	</select>
+
+</mapper>

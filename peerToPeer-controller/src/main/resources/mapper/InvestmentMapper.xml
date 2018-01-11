@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.InvestmentDao">
+	<resultMap type="com.lxit.p2p.bean.Investment" id="investmentMap">
+		<id column="id" property="investmentId" />
+		<result column="buyPortion" property="buyPortion" />
+		<result column="money" property="money" />
+		<result column="registTime" property="registTime" />
+		<result column="startingPortion" property="startingPortion" />
+		<result column="loansState" property="loansState" />
+		<result column="count" property="count" />
+		<result column="type" property="type" />
+		<result column="creationor" property="creationor" />
+		<result column="creationTime" property="creationTime" />
+		<result column="modifier" property="modifier" />
+		<result column="modificationTime" property="modificationTime" />
+		<result column="postscript" property="postscript" />
+		<association property="user" javaType="com.lxit.p2p.bean.User">
+			<id property="userId" column="id" />
+			<result property="nickName" column="nickName" />
+			<result property="phone" column="phone" />
+			<result property="pass" column="pass" />
+			<result property="referrer" column="referrer" />
+			<result property="registTime" column="registTime" />
+			<result property="head" column="head" />
+			<result property="idCard" column="idCard" />
+
+			<result property="email" column="email" />
+			<result property="realName" column="realName" />
+			<result property="lastTime" column="lastTime" />
+			<result property="isNew" column="isNew" />
+			<result property="reputation" column="reputation" />
+			<result property="payment" column="payment" />
+			<result property="money" column="money" />
+		</association>
+	</resultMap>
+
+	<select id="selectInvestmentAll" parameterType="int" resultMap="investmentMap">
+		select id,applyLoansId,money,registTime,userId,count,loansState,type
+		from investment where applyLoansId = #{applyLoansId}
+	</select>
+
+</mapper>

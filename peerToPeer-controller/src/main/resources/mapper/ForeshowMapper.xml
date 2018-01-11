@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.ForeshowDao">
+	<resultMap type="com.lxit.p2p.bean.Foreshow" id="ForeshowMap">
+		<id column="id" property="foreshowId" />
+		<result column="headline" property="headline" />
+		<result column="issueTime" property="issueTime" />
+		<result column="finishTime" property="finishTime" />
+		<result column="creationor" property="creationor" />
+		<result column="registTime" property="registTime" />
+		<result column="state" property="state" />
+		<result column="modifier" property="modifier" />
+		<result column="modificationTime" property="modificationTime" />
+		<result column="postscript" property="postscript" />
+		<result column="creationorName" property="creationorName" />
+		<result column="modifierName" property="modifierName" />
+	</resultMap>
+
+	<!-- 插入预告 -->
+	<insert id="insertForeshow" parameterType="com.lxit.p2p.bean.Foreshow">
+		insert into
+		foreshow(headline,issueTime,finishTime,state,creationor,registTime)
+		VALUES(#{headline},#{issueTime},#{finishTime},#{state},#{creationor},now())
+	</insert>
+
+	<!-- 修改预告 -->
+	<update id="updateForeshow" parameterType="com.lxit.p2p.bean.Foreshow">
+		update foreshow set
+		headline = #{headline},issueTime = #{issueTime},finishTime =
+		#{finishTime},modifier = #{modifier},modificationTime=now() where id =
+		#{foreshowId}
+	</update>
+
+	<!-- 删除预告（逻辑删除，将其状态改成已失效） -->
+	<update id="deleteForeshow" parameterType="com.lxit.p2p.bean.Foreshow">
+		update foreshow set
+		state = #{state},modifier = #{modifier},modificationTime=now() where id =
+		#{foreshowId}
+	</update>
+
+	<!-- 预告详细查询 -->
+	<select id="selectForeshowOne" parameterType="int" resultMap="ForeshowMap">
+		select
+		f.id,f.headline,f.issueTime,f.finishTime,f.state,f.creationor,f.registTime,f.modifier,f.modificationTime,
+		(select s.sta_name from staffs s where f.creationor=s.sta_no) AS
+		creationorName,(select s.sta_name from staffs s where
+		f.modifier=s.sta_no) AS modifierName
+		from foreshow f where f.id = #{foreshowId}
+	</select>
+
+
+	<!-- 预告管理中的页面显示，可模糊查询 -->
+	<select id="selectForeshowAll" resultMap="ForeshowMap"
+		parameterType="java.util.Map">
+		select
+		f.id,f.headline,f.issueTime,f.finishTime,f.state,f.creationor,f.registTime,f.modifier,f.modificationTime,
+		(select s.sta_name from staffs s where f.creationor=s.sta_no) AS
+		creationorName,(select s.sta_name from staffs s where
+		f.modifier=s.sta_no) AS modifierName
+		from foreshow f where f.state =
+		#{foreshowState}
+		<if test="foreshowText != null and foreshowText !=''">
+			and f.headline LIKE CONCAT('%',#{foreshowText},'%')
+		</if>
+		<choose>
+			<when
+				test="foreshowBegin != '' and foreshowBegin != null and foreshowEnd != '' and foreshowEnd != null">
+				and DATE(f.issueTime) &gt; #{foreshowBegin}
+				and DATE(f.finishTime) &lt; #{foreshowEnd}
+			</when>
+			<when test="foreshowBegin != '' and foreshowBegin != null">
+				and DATE(f.issueTime) &gt; #{foreshowBegin}
+			</when>
+			<when test="foreshowEnd != '' and foreshowEnd != null">
+				and DATE(f.finishTime) &lt; #{foreshowEnd}
+			</when>
+			<otherwise>
+				and 1=1
+			</otherwise>
+		</choose>
+		<if test="initiate != null and initiate != '' or initiate == 0">
+			limit #{initiate},#{pageSize}
+		</if>
+	</select>
+
+
+</mapper>

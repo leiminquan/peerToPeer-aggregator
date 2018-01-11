@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.UserDao">
+	<resultMap type="com.lxit.p2p.bean.User" id="userMapper">
+		<id property="userId" column="id" />
+		<result property="nickName" column="nickName" />
+		<result property="phone" column="phone" />
+		<result property="pass" column="pass" />
+		<result property="referrer" column="referrer" />
+		<result property="registTime" column="registTime" />
+		<result property="head" column="head" />
+		<result property="idCard" column="idCard" />
+
+		<result property="email" column="email" />
+		<result property="realName" column="realName" />
+		<result property="lastTime" column="lastTime" />
+		<result property="isNew" column="isNew" />
+		<result property="reputation" column="reputation" />
+		<result property="payment" column="payment" />
+		<result property="money" column="money" />
+		<result property="creater" column="creater" />
+		<result property="creationTime" column="creationTime" />
+		<result property="modifier" column="modifier" />
+		<result property="modificationTime" column="modificationTime" />
+		<result property="postscript" column="postscript" />
+	</resultMap>
+	<update id="updateUserMoney" parameterType="com.lxit.p2p.bean.User">
+		update `user` SET money = money+#{money} where id= #{userId}
+	</update>
+	
+	
+</mapper>

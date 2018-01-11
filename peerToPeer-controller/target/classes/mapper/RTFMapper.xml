@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.RealTimeFinancialDao">
+	<resultMap type="com.lxit.p2p.bean.RealTimeFinancial" id="RTFMap">
+		<id column="id" property="rtfId" />
+		<result column="turnover" property="turnover" />
+		<result column="payments" property="payments" />
+		<result column="interest" property="interest" />
+		<result column="month" property="month" />
+		<result column="registTime" property="registTime" />
+		<result column="second" property="second" />
+		<result column="loanMoney" property="loanMoney" />
+		<result column="loanNumber" property="loanNumber" />
+		<result column="investmentNumber" property="investmentNumber" />
+	</resultMap>
+
+	<!-- 实时财务，已完成交易额，已还款总额 -->
+	<select id="selectFinancialOne" resultMap="RTFMap">
+		select
+		(SUM(r.money)/10000) AS
+		payments,(SUM(r.interest)/10000) AS interest,
+		(select (SUM(i.money)/10000) from investment i WHERE i.registTime
+		&lt;= NOW())
+		AS turnover
+		from refundplan r WHERE r.time &lt;= NOW()
+	</select>
+
+	<!-- 实时财务，贷款余额 -->
+	<select id="selectLoanBalanceAll" resultMap="RTFMap">
+		select
+		CONCAT(YEAR(a.loanTime),'-',MONTH(a.loanTime)) AS `month`,
+		((select SUM(a1.money) from applyloans a1 where
+		CONCAT(YEAR(a1.loanTime),'-',MONTH(a1.loanTime)) &lt;= `month` and
+		(a1.state ="待偿还" OR a1.state = "已还清"))-
+		(select SUM(r.money) FROM refundplan r WHERE
+		CONCAT(YEAR(r.time),'-',MONTH(r.time)) &lt;= `month` and r.state =
+		'已还清'))/10000 AS loanMoney
+		from applyloans a
+		where CONCAT(YEAR(a.loanTime),'-',MONTH(a.loanTime)) &lt;=
+		CONCAT(YEAR(DATE_SUB(NOW(),INTERVAL 1
+		MONTH)),'-',MONTH(DATE_SUB(NOW(),INTERVAL 1 MONTH)))
+		and (a.state ="待偿还" OR a.state = "已还清")
+		GROUP BY `month`
+		ORDER BY `month` DESC
+	</select>
+
+
+
+
+	<!-- 实时财务，平均满标时间 -->
+	<select id="selectSecondAll" resultMap="RTFMap">
+		select
+		CONCAT(YEAR(fullTime),'-',MONTH(fullTime)) AS
+		month,(SUM(TIMESTAMPDIFF(SECOND, startTime, fullTime))/COUNT(1)) as
+		second from applyloans
+		where CONCAT(YEAR(fullTime),'-',MONTH(fullTime))
+		&lt;=
+		CONCAT(YEAR(DATE_SUB(NOW(),INTERVAL 1
+		MONTH)),'-',MONTH(DATE_SUB(NOW(),INTERVAL 1 MONTH))) and (state =
+		'待偿还'
+		or state = '已还清')
+		group by
+		CONCAT(YEAR(fullTime),'-',MONTH(fullTime))
+		ORDER BY month DESC
+		LIMIT
+		0,12
+	</select>
+
+	<!-- 实时财务，30天日成交量 -->
+	<select id="selectDailyTurnoverAll" resultMap="RTFMap">
+		select
+		DATE(CONCAT(YEAR(registTime),'-',MONTH(registTime),'-',DAY(registTime)))
+		AS month,SUM(money)/10000 AS turnover from investment
+		where
+		CONCAT(YEAR(registTime),'-',MONTH(registTime),'-',DAY(registTime))
+		&lt;= (select DATE_SUB(NOW(),INTERVAL 1 DAY))
+		GROUP BY
+		CONCAT(YEAR(registTime),'-',MONTH(registTime),'-',DAY(registTime))
+		ORDER BY
+		CONCAT(YEAR(registTime),'-',MONTH(registTime),'-',DAY(registTime))
+		DESC
+		LIMIT 0,30
+	</select>
+	<!-- 每月贷款人数与投资人数 -->
+	<select id="selectPersonNumberAll" resultMap="RTFMap">
+		select
+		CONCAT(YEAR(registTime),'-',MONTH(registTime))
+		AS month,COUNT(DISTINCT
+		userId) AS investmentNumber,
+		(
+		select COUNT(DISTINCT a.userId) FROM
+		applyloans a where
+		CONCAT(YEAR(a.creationTime),'-',MONTH(a.creationTime)) =month
+		AND
+		(state != "审核中" or state != '申请失败')
+		) AS loanNumber from investment
+		WHERE CONCAT(YEAR(registTime),'-',MONTH(registTime)) &lt;=
+		CONCAT(YEAR(DATE_SUB(NOW(),INTERVAL 1
+		MONTH)),'-',MONTH(DATE_SUB(NOW(),INTERVAL 1 MONTH)))
+		GROUP BY month
+		ORDER BY month DESC
+		LIMIT 0,12
+	</select>
+
+
+
+</mapper>

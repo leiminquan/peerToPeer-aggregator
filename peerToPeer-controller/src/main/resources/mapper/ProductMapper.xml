@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.ProductDao">
+	<resultMap type="com.lxit.p2p.bean.Product" id="ProductMap">
+		<id property="productId" column="id" />
+		<result property="name" column="name" />
+		<result property="introduce" column="introduce" />
+		<result property="rate" column="rate" />
+		<result property="startTime" column="startTime" />
+		<result property="endTime" column="endTime" />
+		<result property="collectMoney" column="collectMoney" />
+		<result property="lockPeriod" column="lockPeriod" />
+		<result property="state" column="state" />
+		<result property="periods" column="periods" />
+		<result property="modeRepayment" column="modeRepayment"/>
+		<result property="startingPortion" column="startingPortion" />
+		<result property="creationor" column="creationor" />
+		<result property="creationTime" column="creationTime" />
+		<result property="modifier" column="modifier" />
+		<result property="modificationTime" column="modificationTime" />
+		<result property="postscript" column="postscript" />
+	</resultMap>
+
+	<select id="selectProductAll" resultMap="ProductMap" parameterType="java.util.Map">
+		select
+		id,name,introduce,rate,startTime,endTime,collectMoney,lockPeriod,
+		state,periods,modeRepayment,startingPortion,creater,creationTime,
+		modificationTime,modifier,postscript FROM product
+		<where>
+			<if test="state != null and state !=''">
+				and state = #{state}
+			</if>
+			<if test="name != null and name !=''">
+				and name LIKE CONCAT('%',#{name},'%')
+			</if>
+			<choose>
+				<when
+					test="startTime != '' and startTime != null and endTime != '' and endTime != null">
+					and DATE(startTime) &gt; #{startTime}
+					and DATE(endTime) &lt;
+					#{endTime}
+				</when>
+				<when test="startTime != '' and startTime != null">
+					and DATE(startTime) &gt; #{startTime}
+				</when>
+				<when test="endTime != '' and endTime != null">
+					and DATE(endTime) &lt; #{endTime}
+				</when>
+				<otherwise>
+					and 1=1
+				</otherwise>
+			</choose>
+		</where>
+		<if test="initiate != null and initiate != '' or initiate == 0">
+			limit #{initiate},#{pageSize}
+		</if>
+	</select>
+
+	<insert id="insertProduct" parameterType="com.lxit.p2p.bean.Product">
+		insert into
+		product(name,introduce,rate,startTime,endTime,collectMoney,lockPeriod,
+		state,periods,modeRepayment,startingPortion,creater,creationTime)
+		values(#{name},#{introduce},#{rate},#{startTime},#{endTime},#{collectMoney}
+		,#{lockPeriod},#{state},#{periods},#{modeRepayment},#{startingPortion},#{creationor},#{creationTime})
+	</insert>
+	<!-- 主动修改 -->
+	<update id="updateProduct" parameterType="com.lxit.p2p.bean.Product">
+		update product
+		set
+		modificationTime=now(),modifier=#{modifier}
+		,name=#{name},introduce=#{introduce},rate=#{rate}
+		,startTime=#{startTime},endTime=#{endTime},collectMoney=#{collectMoney}
+		,lockPeriod=#{lockPeriod},modeRepayment=#{modeRepayment},startingPortion=#{startingPortion}
+		where id = #{productId}
+	</update>
+	<!-- 定时任务修改 没写 -->
+	<update id="updateProductAll" parameterType="java.util.Map">
+		update product
+	</update>
+	<!-- 产品详细查询 -->
+	<select id="selectProductOne" parameterType="int" resultMap="ProductMap">
+		select
+		id,name,introduce,rate,startTime,endTime,collectMoney,lockPeriod,
+		state,periods,modeRepayment,startingPortion,creater,creationTime,
+		modificationTime,modifier,postscript FROM product
+		where id =
+		#{productId}
+	</select>
+	<!-- 根据选择返回相应得模板信息 -->
+	<select id="selectProductName" parameterType="java.util.Map" resultMap="ProductMap">
+		select
+		id,name,introduce,rate,startTime,endTime,collectMoney,lockPeriod,
+		state,periods,modeRepayment,startingPortion,creater,creationTime,
+		modificationTime,modifier,postscript FROM product WHERE `name` =
+		#{name}
+		ORDER BY id DESC
+		LIMIT 0,1
+	</select>
+
+
+</mapper>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.RefundplanDao">
+	<resultMap type="com.lxit.p2p.bean.Refundplan" id="ApplyLoansMap">
+		<id column="id" property="rid" />
+		<result column="money" property="money" />
+		<result column="interest" property="interest" />
+		<result column="periods" property="periods" />
+		<result column="time" property="returnTime" />
+		<result column="type" property="returnType" />
+		<result column="state" property="state" />
+		<result column="lastRepayDate" property="lastRepayDate" />
+		<result column="creater" property="creater" />
+		<result column="creationTime" property="creationTime" />
+		<result column="modifier" property="modifier" />
+		<result column="modificationTime" property="modificationTime" />
+		<result column="postscript" property="postscript" />
+		<association property="applyLoans" javaType="com.lxit.p2p.bean.Applyloans">
+			<id column="loansId" property="applyLoansId" />
+			<result column="type" property="type" />
+			<result column="money" property="money" />
+			<result column="deadline" property="deadline" />
+			<result column="rate" property="rate" />
+			<result column="purpose" property="purpose" />
+			<result column="describe" property="describe" />
+			<result column="way" property="way" />
+		</association>
+	</resultMap>
+
+	<select id="selectRefundplanAll" resultMap="ApplyLoansMap" parameterType="java.util.Map">
+		select
+		id,loansId,money,interest,periods,time,type,state,lastRepayDate from
+		refundplan r where r.state = '未偿还' and DATEDIFF(NOW(),r.lastRepayDate)
+		>=1
+		<if test="initiate != null and initiate != '' or initiate == 0">
+			limit #{initiate},#{pageSize}
+		</if>
+	</select>
+	
+	<update id="updateRefundplan" parameterType="com.lxit.p2p.bean.Refundplan">
+		update refundplan set state = #{state},modificationTime=#{modificationTime},modifier=#{modifier} where id = #{rid}
+	</update>
+
+
+</mapper>

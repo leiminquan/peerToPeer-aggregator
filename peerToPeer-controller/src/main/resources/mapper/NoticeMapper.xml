@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxit.p2p.dao.NoticeDao">
+	<resultMap type="com.lxit.p2p.bean.Notice" id="NoticeMap">
+		<id column="id" property="noticeId" />
+		<result column="headline" property="headline" />
+		<result column="content" property="content" />
+		<result column="issueTime" property="issueTime" />
+		<result column="finishTime" property="finishTime" />
+		<result column="creationor" property="creationor" />
+		<result column="registTime" property="registTime" />
+		<result column="State" property="state" />
+		<result column="modifier" property="modifier" />
+		<result column="modificationTime" property="modificationTime" />
+		<result column="postscript" property="postscript" />
+		<result column="creationorName" property="creationorName" />
+		<result column="modifierName" property="modifierName" />
+	</resultMap>
+
+
+	<!-- 插入公告 -->
+	<insert id="insertNotice" parameterType="com.lxit.p2p.bean.Notice">
+		insert into
+		notice(headline,content,issueTime,finishTime,state,creationor,registTime)
+		VALUES(#{headline},#{content},#{issueTime},#{finishTime},#{state},#{creationor},now())
+	</insert>
+
+	<!-- 修改公告 -->
+	<update id="updateNotice" parameterType="com.lxit.p2p.bean.Notice">
+		update notice set
+		headline = #{headline},content=#{content},issueTime = #{issueTime},finishTime=#{finishTime},
+		modifier = #{modifier},modificationTime=now() where id =
+		#{noticeId}
+	</update>
+
+	<!-- 删除公告（逻辑删除，将其状态改成已失效） -->
+	<update id="deleteNotice" parameterType="int">
+		update notice set
+		state = #{state},modifier = #{modifier},modificationTime=now() where id = #{noticeId}
+	</update>
+
+	<!-- 公告管理中的页面显示，可模糊查询 -->
+	<select id="selectNoticeAll" resultMap="NoticeMap"
+		parameterType="java.util.Map">
+		select
+		c.id,c.headline,c.content,c.issueTime,c.finishTime,c.state,c.creationor,c.registTime,c.modifier,c.modificationTime,
+		(select s.sta_name from staffs s where c.creationor=s.sta_no) AS
+		creationorName,(select s.sta_name from staffs s where
+		c.modifier=s.sta_no) AS modifierName
+		from notice c 
+		<where>
+			<if test="headline != null and headline !=''">
+				and c.headline LIKE CONCAT('%',#{headline},'%')
+			</if>
+
+			<choose>
+				<when
+				test="issueTime != '' and issueTime != null and finishTime != '' and finishTime != null">
+				and DATE(c.issueTime) &gt; #{issueTime}
+				and DATE(c.finishTime) &lt; #{finishTime}
+			</when>
+			<when test="issueTime != '' and issueTime != null">
+				and DATE(c.issueTime) &gt; #{issueTime}
+			</when>
+			<when test="foreshowEnd != '' and foreshowEnd != null">
+				and DATE(c.finishTime) &lt; #{finishTime}
+			</when>
+			<otherwise>
+				and 1=1
+			</otherwise>
+			</choose>
+			<if test="state != null and state !=''">
+				and c.state = #{state}
+			</if>
+		</where>
+		<if test="initiate != null and initiate != '' or initiate == 0">
+			limit #{initiate},#{pageSize}
+		</if>
+	</select>
+	<!-- 查询公告的详细内容 -->
+	<select id="selectNoticeOne" resultMap="NoticeMap"
+		parameterType="int">
+		select
+		c.id,c.headline,c.content,c.issueTime,c.finishTime,c.state,c.creationor,c.registTime,c.modifier,c.modificationTime,
+		(select s.sta_name from staffs s where c.creationor=s.sta_no) AS
+		creationorName,(select s.sta_name from staffs s where
+		c.modifier=s.sta_no) AS modifierName
+		from notice c where c.id =#{noticeId}
+	</select>
+
+</mapper>
